@@ -1,0 +1,48 @@
+name: iOS build and tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: macos-15
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Select available iPhone simulator
+        run: |
+          xcodebuild -version
+          xcrun simctl list devices available --json > /tmp/simulators.json
+          python3 - <<'PY'
+          import json, os
+          devices = json.load(open('/tmp/simulators.json'))['devices']
+          phones = [device for runtime, group in devices.items() if 'iOS' in runtime
+                    for device in group if device['name'].startswith('iPhone') and device.get('isAvailable')]
+          if not phones:
+              raise SystemExit('No available iPhone simulator found')
+          with open(os.environ['GITHUB_ENV'], 'a') as env:
+              env.write('SIMULATOR_ID=' + phones[0]['udid'] + '\n')
+          PY
+      - name: Build and test
+        run: |
+          set -o pipefail
+          xcodebuild test \
+            -project TalabatApp.xcodeproj \
+            -scheme TalabatApp \
+            -destination "platform=iOS Simulator,id=$SIMULATOR_ID" \
+            -resultBundlePath TestResults.xcresult \
+            CODE_SIGNING_ALLOWED=NO | tee xcodebuild.log
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-test-results
+          path: |
+            TestResults.xcresult
+            xcodebuild.log
