@@ -1,9 +1,9 @@
 import XCTest
 @testable import TalabatApp
 
-@MainActor
 final class AppStoreTests: XCTestCase {
-    func testDemoSignInValidationAndSignOut() {
+    @MainActor
+    func testDemoSignInValidationAndSignOut() async {
         let store = AppStore()
         XCTAssertFalse(store.signIn(email: "bad-email", password: "123456"))
         XCTAssertFalse(store.signIn(email: "demo@example.com", password: "123"))
@@ -19,7 +19,8 @@ final class AppStoreTests: XCTestCase {
         XCTAssertEqual(store.selectedTab, 0)
     }
 
-    func testCartQuantitiesTotalsAndRemoval() {
+    @MainActor
+    func testCartQuantitiesTotalsAndRemoval() async {
         let store = AppStore()
         let restaurant = SampleData.restaurants[0]
         let burger = restaurant.menu[0]
@@ -44,7 +45,8 @@ final class AppStoreTests: XCTestCase {
         XCTAssertTrue(store.cart.isEmpty)
     }
 
-    func testOrderCapturesTotalAndClearsCart() {
+    @MainActor
+    func testOrderCapturesTotalAndClearsCart() async {
         let store = AppStore()
         XCTAssertNil(store.placeDemoOrder())
         let restaurant = SampleData.restaurants[0]
@@ -57,7 +59,8 @@ final class AppStoreTests: XCTestCase {
         XCTAssertEqual(store.total, 0)
     }
 
-    func testSampleIDsAreUniqueAndCoordinatesValid() {
+    @MainActor
+    func testSampleIDsAreUniqueAndCoordinatesValid() async {
         let restaurants = SampleData.restaurants
         XCTAssertEqual(Set(restaurants.map(\.id)).count, restaurants.count)
         let items = restaurants.flatMap(\.menu)
